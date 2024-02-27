@@ -25,16 +25,15 @@ Ethereal Engine. All Rights Reserved.
 */
 import React, { useImperativeHandle } from 'react'
 
-import { AssetLoader } from '@etherealengine/engine/src/assets/classes/AssetLoader'
 import { AssetType } from '@etherealengine/engine/src/assets/enum/AssetType'
-import { NO_PROXY, useHookstate } from '@etherealengine/hyperflux'
-import createReadableTexture from '@etherealengine/spatial/src/renderer/functions/createReadableTexture'
+import { useHookstate } from '@etherealengine/hyperflux'
 
 import { AudioPreviewPanel } from './AssetPreviewPanels/AudioPreviewPanel'
 import { ImagePreviewPanel } from './AssetPreviewPanels/ImagePreviewPanel'
 import { JsonPreviewPanel } from './AssetPreviewPanels/JsonPreviewPanel'
 import { ModelPreviewPanel } from './AssetPreviewPanels/ModelPreviewPanel'
 import { PreviewUnavailable } from './AssetPreviewPanels/PreviewUnavailable'
+import { TexturePreviewPanel } from './AssetPreviewPanels/TexturePreviewPanel'
 import { TxtPreviewPanel } from './AssetPreviewPanels/TxtPreviewPanel'
 import { VideoPreviewPanel } from './AssetPreviewPanels/VideoPreviewPanel'
 
@@ -59,125 +58,67 @@ export type AssetSelectionChangePropsType = ResourceProps & {
   contentType: string
 }
 
+type PreviewPanel = React.FC<{ resourceProps: ResourceProps }>
+
+const PreviewPanelContentTypes: Array<{ types: Array<string>; panel: PreviewPanel }> = [
+  {
+    types: [
+      'model/gltf',
+      'model/gltf-binary',
+      'model/glb',
+      AssetType.VRM,
+      'model/vrm',
+      AssetType.glB,
+      AssetType.glTF,
+      'gltf-binary',
+      AssetType.USDZ,
+      AssetType.FBX
+    ],
+    panel: ModelPreviewPanel
+  },
+  { types: ['image/png', 'image/jpeg', 'png', 'jpeg', 'jpg'], panel: ImagePreviewPanel },
+  { types: ['ktx2', 'image/ktx2'], panel: TexturePreviewPanel },
+  { types: ['video/mp4', 'mp4', 'm3u8'], panel: VideoPreviewPanel },
+  { types: ['audio/mpeg', 'mpeg', 'mp3'], panel: AudioPreviewPanel },
+  { types: ['md', 'ts', 'js'], panel: TxtPreviewPanel },
+  { types: ['json'], panel: JsonPreviewPanel }
+]
+
+const PreviewPanelByContentTypeMap = new Map<string, PreviewPanel>()
+for (const entry of PreviewPanelContentTypes) {
+  for (const type of entry.types) {
+    PreviewPanelByContentTypeMap.set(type, entry.panel)
+  }
+}
+
 /**
  * Used to see the Preview of the Asset in the FileBrowser Panel
  */
 export const AssetsPreviewPanel = React.forwardRef(({ hideHeading }: Props, ref) => {
   useImperativeHandle(ref, () => ({ onSelectionChanged }))
-  const previewPanel = useHookstate({
-    PreviewSource: null as ((props: { resourceProps: ResourceProps }) => JSX.Element) | null,
-    resourceProps: { resourceUrl: '', name: '', size: '' }
+  const currentProps = useHookstate<AssetSelectionChangePropsType>({
+    resourceUrl: '',
+    name: '',
+    size: '',
+    contentType: ''
   })
 
-  const thumbnail = useHookstate('')
-
   const onSelectionChanged = async (props: AssetSelectionChangePropsType) => {
-    thumbnail.value && URL.revokeObjectURL(thumbnail.value)
-    if (/ktx2$/.test(props.resourceUrl)) {
-      const texture = await AssetLoader.loadAsync(props.resourceUrl)
-      thumbnail.set((await createReadableTexture(texture, { url: true })) as string)
-      texture.dispose()
-    } else {
-      thumbnail.set('')
-    }
-    renderPreview(props)
+    currentProps.set(props)
   }
 
-  const renderPreview = (props) => {
-    switch (props.contentType) {
-      case 'model/gltf':
-      case 'model/gltf-binary':
-      case 'model/glb':
-      case AssetType.VRM:
-      case 'model/vrm':
-      case AssetType.glB:
-      case AssetType.glTF:
-      case 'gltf-binary':
-      case AssetType.USDZ:
-      case AssetType.FBX:
-        const modelPreviewPanel = {
-          PreviewSource: ModelPreviewPanel,
-          resourceProps: { resourceUrl: props.resourceUrl, name: props.name, size: props.size }
-        }
-        previewPanel.set(modelPreviewPanel)
-        break
-      case 'image/png':
-      case 'image/jpeg':
-      case 'png':
-      case 'jpeg':
-      case 'jpg':
-        const imagePreviewPanel = {
-          PreviewSource: ImagePreviewPanel,
-          resourceProps: { resourceUrl: props.resourceUrl, name: props.name, size: props.size }
-        }
-        previewPanel.set(imagePreviewPanel)
-        break
-      case 'ktx2':
-      case 'image/ktx2':
-        const compImgPreviewPanel = {
-          PreviewSource: ImagePreviewPanel,
-          resourceProps: { resourceUrl: thumbnail.value, name: props.name, size: props.size }
-        }
-        previewPanel.set(compImgPreviewPanel)
-        break
-
-      case 'video/mp4':
-      case 'mp4':
-      case 'm3u8':
-        const videoPreviewPanel = {
-          PreviewSource: VideoPreviewPanel,
-          resourceProps: { resourceUrl: props.resourceUrl, name: props.name, size: props.size }
-        }
-        previewPanel.set(videoPreviewPanel)
-        break
-      case 'audio/mpeg':
-      case 'mpeg':
-      case 'mp3':
-        const audioPreviewPanel = {
-          PreviewSource: AudioPreviewPanel,
-          resourceProps: { resourceUrl: props.resourceUrl, name: props.name, size: props.size }
-        }
-        previewPanel.set(audioPreviewPanel)
-        break
-      case 'md':
-      case 'ts':
-      case 'js':
-        const txtPreviewPanel = {
-          PreviewSource: TxtPreviewPanel,
-          resourceProps: { resourceUrl: props.resourceUrl, name: props.name, size: props.size }
-        }
-        previewPanel.set(txtPreviewPanel)
-        break
-      case 'json':
-        const jsonPreviewPanel = {
-          PreviewSource: JsonPreviewPanel,
-          resourceProps: { resourceUrl: props.resourceUrl, name: props.name, size: props.size }
-        }
-        previewPanel.set(jsonPreviewPanel)
-        break
-
-      default:
-        const unavailable = {
-          PreviewSource: PreviewUnavailable,
-          resourceProps: { resourceUrl: props.resourceUrl, name: props.name, size: props.size }
-        }
-        previewPanel.set(unavailable)
-        break
-    }
-  }
-
-  const PreviewSource = previewPanel.get(NO_PROXY).PreviewSource
+  const PreviewPanel = PreviewPanelByContentTypeMap.get(currentProps.contentType.value) ?? PreviewUnavailable
 
   return (
     <>
       {!hideHeading && (
         <div style={assetHeadingStyles as React.CSSProperties}>
-          {previewPanel.resourceProps.name.value &&
-            previewPanel.resourceProps.size.value &&
-            `${previewPanel.resourceProps.name.value} (${previewPanel.resourceProps.size.value})`}
+          {currentProps.name.value &&
+            currentProps.size.value &&
+            `${currentProps.name.value} (${currentProps.size.value})`}
         </div>
       )}
-      {PreviewSource && <PreviewSource resourceProps={previewPanel.resourceProps.value} />}
+      <PreviewPanel resourceProps={currentProps.value} />
     </>
   )
 })
