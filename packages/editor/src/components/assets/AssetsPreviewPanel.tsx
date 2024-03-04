@@ -52,6 +52,7 @@ type ResourceProps = {
   resourceUrl: string
   name: string
   size: string | undefined
+  displayCbk?: () => CanvasImageSource | null
 }
 
 export type AssetSelectionChangePropsType = ResourceProps & {
@@ -59,8 +60,13 @@ export type AssetSelectionChangePropsType = ResourceProps & {
 }
 
 type PreviewPanel = React.FC<{ resourceProps: ResourceProps }>
+type PreviewPanelDescriptor = {
+  types: Array<string>
+  panel: PreviewPanel
+  useForThumbnails?: boolean
+}
 
-const PreviewPanelContentTypes: Array<{ types: Array<string>; panel: PreviewPanel }> = [
+const PreviewPanelContentTypes: Array<PreviewPanelDescriptor> = [
   {
     types: [
       'model/gltf',
@@ -74,20 +80,21 @@ const PreviewPanelContentTypes: Array<{ types: Array<string>; panel: PreviewPane
       AssetType.USDZ,
       AssetType.FBX
     ],
-    panel: ModelPreviewPanel
+    panel: ModelPreviewPanel,
+    useForThumbnails: true
   },
-  { types: ['image/png', 'image/jpeg', 'png', 'jpeg', 'jpg'], panel: ImagePreviewPanel },
-  { types: ['ktx2', 'image/ktx2'], panel: TexturePreviewPanel },
-  { types: ['video/mp4', 'mp4', 'm3u8'], panel: VideoPreviewPanel },
+  { types: ['image/png', 'image/jpeg', 'png', 'jpeg', 'jpg'], panel: ImagePreviewPanel, useForThumbnails: true },
+  { types: ['ktx2', 'image/ktx2'], panel: TexturePreviewPanel, useForThumbnails: true },
+  { types: ['video/mp4', 'mp4', 'm3u8'], panel: VideoPreviewPanel, useForThumbnails: true },
   { types: ['audio/mpeg', 'mpeg', 'mp3'], panel: AudioPreviewPanel },
   { types: ['md', 'ts', 'js'], panel: TxtPreviewPanel },
   { types: ['json'], panel: JsonPreviewPanel }
 ]
 
-const PreviewPanelByContentTypeMap = new Map<string, PreviewPanel>()
+export const PreviewPanelByContentTypeMap = new Map<string, PreviewPanelDescriptor>()
 for (const entry of PreviewPanelContentTypes) {
   for (const type of entry.types) {
-    PreviewPanelByContentTypeMap.set(type, entry.panel)
+    PreviewPanelByContentTypeMap.set(type, entry)
   }
 }
 
@@ -107,7 +114,7 @@ export const AssetsPreviewPanel = React.forwardRef(({ hideHeading }: Props, ref)
     currentProps.set(props)
   }
 
-  const PreviewPanel = PreviewPanelByContentTypeMap.get(currentProps.contentType.value) ?? PreviewUnavailable
+  const PreviewPanel = PreviewPanelByContentTypeMap.get(currentProps.contentType.value)?.panel ?? PreviewUnavailable
 
   return (
     <>

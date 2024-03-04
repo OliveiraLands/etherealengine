@@ -89,11 +89,13 @@ export const FileIcon = ({ file, showRibbon }: { file: FileDataType; showRibbon?
   if (thumbnailURL == null && fileTypeCanHaveThumbnail(file.type)) {
     retrieveStaticResource(file).then((resource) => {
       if (resource?.thumbnailKey == null) {
+        console.log('No thumbnail', file.key)
+        fileThumbnailCache.set(file.key, 'FAILED')
         setThumbnailURL(null)
         return
       }
-
-      setThumbnailURL(`${config.client.fileServer}/projects/${resource?.project}/thumbnails/${resource?.thumbnailKey}`)
+      fileThumbnailCache.set(file.key, resource.thumbnailKey)
+      setThumbnailURL(`${config.client.fileServer}/projects/${resource?.project}/thumbnails/${resource.thumbnailKey}`)
     })
   }
 
@@ -103,7 +105,7 @@ export const FileIcon = ({ file, showRibbon }: { file: FileDataType; showRibbon?
     <>
       {file.isFolder ? (
         <FolderIcon fontSize={'inherit'} />
-      ) : thumbnailURL != null ? (
+      ) : thumbnailURL != null && thumbnailURL != 'FAILED' ? (
         <img style={{ maxHeight: '90px' }} crossOrigin="anonymous" src={thumbnailURL} alt="" />
       ) : fallback.icon ? (
         <fallback.icon fontSize={'inherit'} />

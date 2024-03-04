@@ -40,6 +40,14 @@ const imageStyles = {
 
 export const ImagePreviewPanel = (props) => {
   const url = props.resourceProps.resourceUrl
-
-  return <img src={url} alt="Photo" crossOrigin="anonymous" style={imageStyles} />
+  return (
+    <img
+      src={url}
+      ref={props.ref}
+      alt="Photo"
+      crossOrigin="anonymous"
+      style={imageStyles}
+      onLoad={(event) => props.resourceProps.displayCbk?.(event.target)}
+    />
+  )
 }

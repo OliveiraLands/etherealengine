@@ -50,6 +50,7 @@ import styles from '../styles.module.scss'
 
 export const ModelPreviewPanel = (props) => {
   const url = props.resourceProps.resourceUrl
+  const displayCbk = props.resourceProps.displayCbk
   const loading = useHookstate(true)
 
   const error = useHookstate('')
@@ -96,6 +97,8 @@ export const ModelPreviewPanel = (props) => {
     ObjectLayerMaskComponent.setLayer(entity, ObjectLayers.AssetPreview)
 
     loading.set(false)
+
+    // TODO: call displayCbk after first render
   }, [url])
 
   return (

@@ -42,7 +42,12 @@ export const VideoPreviewPanel = (props) => {
   const url = props.resourceProps.resourceUrl
 
   return (
-    <video style={videoStyles} src={url} controls={true}>
+    <video
+      style={videoStyles}
+      src={url}
+      controls={true}
+      onLoadedData={(event) => props.resourceProps.displayCbk?.(event.target)}
+    >
       Your Browser doesn't support Video
     </video>
   )

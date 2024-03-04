@@ -61,5 +61,13 @@ export const TexturePreviewPanel = (props) => {
   useEffect(() => {
     return texUnload
   }, [])
-  return <img src={url.value} alt="Photo" crossOrigin="anonymous" style={imageStyles} />
+  return (
+    <img
+      src={url.value}
+      alt="Photo"
+      crossOrigin="anonymous"
+      style={imageStyles}
+      onLoad={(event) => props.resourceProps.displayCbk?.(event.target)}
+    />
+  )
 }
