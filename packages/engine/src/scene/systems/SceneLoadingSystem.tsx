@@ -133,19 +133,27 @@ const SceneReactor = (props: { sceneID: SceneID }) => {
   const systemsLoaded = useHookstate([] as SystemImportType[])
 
   useEffect(() => {
+    console.log('scene loading useEffect changed', sceneAssetPendingTagQuery.length, assetLoadingState, entities.keys)
+    console.log('sceneEntities', sceneEntities)
     if (!ready.value || getState(SceneState).sceneLoaded) return
 
     const entitiesCount = sceneEntities.keys.map(UUIDComponent.getEntityByUUID).filter(Boolean).length
+    console.log('entitiesCount', entitiesCount)
     if (entitiesCount <= 1) return
 
     const values = Object.values(assetLoadingState.value)
+    console.log('values', values)
     const total = values.reduce((acc, curr) => acc + curr.totalAmount, 0)
+    console.log('total', total)
     const loaded = values.reduce((acc, curr) => acc + curr.loadedAmount, 0)
+    console.log('loaded', loaded)
     const progress = !sceneAssetPendingTagQuery.length || total === 0 ? 100 : Math.round((100 * loaded) / total)
+    console.log('progress', progress)
 
     getMutableState(SceneState).loadingProgress.set(progress)
 
     if (!sceneAssetPendingTagQuery.length && !getState(SceneState).sceneLoaded) {
+      console.log('All assets loaded, setting sceneLoaded to true')
       getMutableState(SceneState).sceneLoaded.set(true)
       SceneAssetPendingTagComponent.loadingProgress.set({})
     }

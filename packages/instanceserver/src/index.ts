@@ -28,6 +28,10 @@ import { updateAppConfig } from '@etherealengine/server-core/src/updateAppConfig
 const init = async () => {
   await updateAppConfig()
   const { start } = await import('./start')
-  start()
+  try {
+    start()
+  } catch(err) {
+    console.error('error in start', err)
+  }
 }
 init()

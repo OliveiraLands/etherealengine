@@ -28,12 +28,15 @@ import { Engine } from '@etherealengine/ecs/src/Engine'
 import { loadConfigForProject } from './loadConfigForProject'
 
 export const loadEngineInjection = async () => {
+    console.log('loadEngineInjection')
   const projects = await Engine.instance.api.service(projectsPath).find()
+    console.log('projects', projects)
   return Promise.all(
     projects.map(async (project) => {
       try {
         const projectConfig = (await loadConfigForProject(project))!
         if (typeof projectConfig.worldInjection !== 'function') return null!
+          console.log('project has injection', project)
         return (await projectConfig.worldInjection()).default?.()
       } catch (e) {
         console.error(`Failed to import world load event for project ${project} with reason ${e}`)

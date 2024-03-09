@@ -265,6 +265,7 @@ const initializeInstance = async ({
  */
 
 const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId?: SceneID; headers?: object }) => {
+  console.log('loadEngine', sceneId)
   const instanceServerState = getState(InstanceServerState)
 
   const hostId = instanceServerState.instance.id as UserID & InstanceID
@@ -273,9 +274,13 @@ const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId
   HyperFlux.store.forwardingTopics.add(topic)
 
   await setupIPs()
+  console.log('setupIPs finished')
   const network = await initializeNetwork(app, hostId, hostId, topic)
+  console.log('network initialized')
 
   addNetwork(network)
+
+  console.log('added network')
 
   NetworkPeerFunctions.createPeer(
     network,
@@ -285,12 +290,15 @@ const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId
     network.userIndexCount++
   )
 
+  console.log('calling loadEngineInjection')
   await loadEngineInjection()
+  console.log('finished loadEngineInjection')
 
   if (instanceServerState.isMediaInstance) {
     getMutableState(NetworkState).hostIds.media.set(hostId)
     getMutableState(SceneState).sceneLoaded.set(true)
   } else {
+    console.log('world instancserver')
     getMutableState(NetworkState).hostIds.world.set(hostId)
 
     if (!sceneId) throw new Error('No sceneId provided')
@@ -299,12 +307,17 @@ const loadEngine = async ({ app, sceneId, headers }: { app: Application; sceneId
       const sceneData = (await app
         .service(scenePath)
         .get('', { query: { sceneKey: sceneId, metadataOnly: false }, headers })) as SceneDataType
+      console.log('sceneData', sceneData)
       SceneState.loadScene(sceneId, sceneData)
+      console.log('scene loaded', sceneId)
       /** @todo - quick hack to wait until scene has loaded */
 
       await new Promise<void>((resolve) => {
+        console.log('waiting for sceneLoaded to be true')
         const interval = setInterval(() => {
+          console.log('sceneLoaded check', getState(SceneState).sceneLoaded)
           if (getState(SceneState).sceneLoaded) {
+            console.log('sceneLoaded is true, resolving promise')
             clearInterval(interval)
             resolve()
           }

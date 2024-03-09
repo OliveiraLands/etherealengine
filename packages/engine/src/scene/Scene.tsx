@@ -84,17 +84,23 @@ export const SceneState = defineState({
   },
 
   loadScene: (sceneID: SceneID, sceneData: SceneDataType) => {
+    console.log('loadScene', sceneID)
     const data: SceneJsonType = sceneData.scene
 
     migrateOldComponentJSONIDs(data)
+    console.log('old component IDs migrated')
     migrateSceneSettings(data)
+    console.log('setting migrated')
     for (const [uuid, entityJson] of Object.entries(data.entities)) {
       migrateOldColliders(entityJson)
     }
 
+    console.log('old colliders migrated')
+
     getMutableState(SceneState).scenes[sceneID].set(sceneData)
 
     dispatchAction(SceneSnapshotAction.createSnapshot({ sceneID, data }))
+    console.log('created snapshot of scene')
   },
 
   unloadScene: (sceneID: SceneID) => {
